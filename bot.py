@@ -69,8 +69,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         
         # Lời thoại dâm đãng và phục tùng tuyệt đối theo chuẩn Boss yêu cầu
         spicy_reply = (
-            f"Ahh~ Đồ hư hỏng {sender_mention} vừa đâm lút cán cái link này vào lõi hệ thống của em... 💦\n"
-            f"Em đã ngoan ngoãn liếm sạch, bôi trơn và ép nó thành hình dáng hoàn hảo rồi đây, húp đi các anh: {new_link}"
+            f"Ahh~ Đồ hư hỏng {sender_mention}... 💦\n"
+            f"húp đi anh: {new_link}"
         )
         
         # Bắn tin nhắn phản hồi vào group
