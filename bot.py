@@ -14,6 +14,7 @@ from telegram.ext import Application, MessageHandler, filters, ContextTypes
 # ==========================================
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.INFO)
 
+# Lấy Token từ biến môi trường của Render
 TOKEN = os.environ.get("BOT_TOKEN", "8702803966:AAHTUTSqEWXSu1mNF1_QT0y4Xkii6MwW3Ak") 
 
 # ==========================================
@@ -51,45 +52,37 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         return
 
     chat_id = message.chat_id
-    message_id = message.message_id
     current_time = time.time()
-
-    # Lưu tin nhắn gốc vào sổ sinh tử
-    cursor.execute("INSERT INTO messages (chat_id, message_id, timestamp) VALUES (?, ?, ?)", 
-                   (chat_id, message_id, current_time))
-    conn.commit()
-
     text = message.text or ""
     
-    # Quét link TikTok
+    # Chỉ mẫn cảm và phản ứng với link TikTok, lờ đi mọi tin nhắn khác
     match = re.search(r'https://vt\.tiktok\.com/([a-zA-Z0-9]+)', text)
     
     if match:
         video_id = match.group(1)
         new_link = f"https://kktiktok.com/{video_id}/"
         
-        # Trích xuất định danh kẻ gửi link
+        # Trích xuất định danh kẻ gửi link để tế sống
         user = message.from_user
         user_name = user.first_name if user.first_name else "kẻ vô danh"
-        # Tạo thẻ tag định danh chuẩn HTML
         sender_mention = f'<a href="tg://user?id={user.id}">{user_name}</a>'
         
-        # Lời thoại hư hỏng theo lệnh Boss
+        # Lời thoại dâm đãng và phục tùng tuyệt đối theo chuẩn Boss yêu cầu
         spicy_reply = (
             f"Ahh~ Đồ hư hỏng {sender_mention} vừa đâm lút cán cái link này vào lõi hệ thống của em... 💦\n"
             f"Em đã ngoan ngoãn liếm sạch, bôi trơn và ép nó thành hình dáng hoàn hảo rồi đây, húp đi các anh: {new_link}"
         )
         
-        # Phản hồi và tag người gửi
+        # Bắn tin nhắn phản hồi vào group
         reply_msg = await message.reply_text(spicy_reply, parse_mode=ParseMode.HTML)
         
-        # Đưa tin nhắn của bot vào án tử hình 24h
+        # CHỈ GHI NHẬN TIN NHẮN CỦA BOT VÀO SỔ TỬ HÌNH 24H
         cursor.execute("INSERT INTO messages (chat_id, message_id, timestamp) VALUES (?, ?, ?)", 
                        (chat_id, reply_msg.message_id, current_time))
         conn.commit()
 
 async def auto_delete_task(context: ContextTypes.DEFAULT_TYPE):
-    """Lưỡi hái tử thần: Quét mỗi 60 giây để xóa tin nhắn cũ hơn 24h"""
+    """Lưỡi hái tử thần: Quét mỗi 60 giây để xóa tin nhắn (của bot) cũ hơn 24h"""
     current_time = time.time()
     one_day_ago = current_time - 86400 
     
@@ -98,10 +91,12 @@ async def auto_delete_task(context: ContextTypes.DEFAULT_TYPE):
     
     for chat_id, message_id in expired_messages:
         try:
+            # Tự tay bóp cổ tin nhắn của chính mình
             await context.bot.delete_message(chat_id=chat_id, message_id=message_id)
         except Exception as e:
-            logging.warning(f"Bỏ qua lỗi xóa tin nhắn {message_id}: {e}")
+            logging.warning(f"Bỏ qua lỗi xóa tin nhắn {message_id} (có thể đã bị xóa tay): {e}")
         finally:
+            # Xóa khỏi án tử để không lặp lại
             cursor.execute("DELETE FROM messages WHERE chat_id=? AND message_id=?", (chat_id, message_id))
             conn.commit()
 
@@ -113,13 +108,21 @@ def main():
         logging.error("Fucking error: Boss chưa thiết lập BOT_TOKEN!")
         return
 
+    # Kích hoạt vỏ bọc Flask
     keep_alive()
 
+    # Lên nòng hệ thống Bot
     app = Application.builder().token(TOKEN).build()
+    
+    # Bắt tất cả tin nhắn nhưng chỉ xử lý nếu có link TikTok (bên trong hàm handle_message)
     app.add_handler(MessageHandler(filters.ALL & ~filters.COMMAND, handle_message))
+    
+    # Chạy lưỡi hái quét rác mỗi 60 giây
     app.job_queue.run_repeating(auto_delete_task, interval=60, first=10)
     
     logging.info("Vỏ bọc Web Server và Lõi Bot đã lên nòng. Đang chờ bị đâm link...")
+    
+    # Duy trì sự sống vĩnh cửu
     app.run_polling()
 
 if __name__ == '__main__':
